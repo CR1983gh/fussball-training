@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>🎲 Drill-Würfel</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--fg:#e6edf3;--dim:#8b949e;--accent:#ffd400;--line:#30363d;--gruen:#46a758}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;border-bottom:1px solid var(--line)}
+  header a{color:var(--dim);text-decoration:none;font-size:.85rem}
+  header h1{font-size:1.05rem;margin:0;flex:1}
+  main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;gap:.9rem;text-align:center}
+  #drill{width:min(94vw,540px);background:var(--card);border:2px solid var(--line);border-radius:18px;padding:1.4rem 1rem;display:flex;flex-direction:column;align-items:center;gap:.5rem;min-height:34vmin;justify-content:center}
+  #dicon{font-size:12vmin;line-height:1}
+  #dname{font-size:6.5vmin;font-weight:800}
+  #dclock{font-size:3rem;font-family:ui-monospace,Consolas,monospace;color:var(--accent);font-weight:800}
+  #dnext{font-size:.85rem;color:var(--dim)}
+  .btn{border:none;border-radius:999px;font-weight:800;cursor:pointer;font-family:inherit}
+  #rollBtn{background:var(--accent);color:#111;font-size:1.25rem;padding:.9rem 2.8rem}
+  #skipBtn{background:transparent;border:1px solid var(--line);color:var(--fg);font-size:.85rem;padding:.45rem 1.2rem}
+  #settingsBtn{background:transparent;color:var(--dim);border:1px solid var(--line);font-size:.8rem;padding:.45rem 1rem;border-radius:999px}
+  #panel{width:min(94vw,540px);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1rem;font-size:.9rem;display:none;text-align:left}
+  #panel.open{display:block}
+  #panel label{display:block;margin:.7rem 0 .2rem;color:var(--dim);font-size:.8rem}
+  #panel select,#panel textarea{width:100%;padding:.5rem;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:.95rem}
+  #panel textarea{min-height:110px;font-family:inherit;resize:vertical}
+  .chips{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.3rem}
+  .chip{font-size:.72rem;border:1px solid var(--line);border-radius:999px;padding:.2rem .6rem;color:var(--dim);cursor:pointer;background:transparent}
+  .chip.on{color:var(--accent);border-color:var(--accent)}
+  footer{text-align:center;font-size:.7rem;color:var(--dim);padding:.8rem}
+  footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+<header>
+  <a href="../index.html">← Training</a>
+  <h1>🎲 Drill-Würfel</h1>
+  <span style="width:60px"></span>
+</header>
+<main>
+  <div id="drill">
+    <div id="dicon">🎲</div>
+    <div id="dname">Drücke Würfeln!</div>
+    <div id="dclock"></div>
+    <div id="dnext"></div>
+  </div>
+  <button class="btn" id="rollBtn">🎲 Würfel mir eine Übung!</button>
+  <button class="btn" id="skipBtn" style="display:none">⏭ Nächster Drill</button>
+  <button class="btn" id="settingsBtn">⚙ Übungen bearbeiten</button>
+  <div id="panel">
+    <label>Übungsliste — eine pro Zeile. Emoji am Anfang wird das große Symbol. Text nach "|" ist die Ansage.</label>
+    <textarea id="drillText"></textarea>
+    <label>Dauer pro Drill</label>
+    <select id="durSel"><option value="45">45 Sekunden</option><option value="60" selected>1 Minute</option><option value="90">1,5 Minuten</option><option value="120">2 Minuten</option><option value="0">ohne Timer (manuell weiterschalten)</option></select>
+    <label>Schnell reinwürfeln:</label>
+    <div class="chips" id="quickChips"></div>
+    <div style="color:var(--dim);font-size:.8rem;margin-top:.6rem">Tipp: Gleiche Übung kommt nie zweimal direkt hintereinander.</div>
+  </div>
+</main>
+<footer><a href="https://cr1983gh.github.io/">⚓ Deck 7</a> · Drill-Würfel</footer>
+<script>
+(function(){
+  'use strict';
+  var KEY='***';
+  var DEF_LIST=[
+    '⚽ Slalom-Dribbling|Slalom durch die Stangen — Kopf hoch!',
+    '🎯 Wandpässe|Gegen die Wand passen, links und rechts abwechselnd!',
+    '🏃 Antritte|3 Antritte über 10 Meter, voll durchziehen!',
+    '🦶 Ballgefühl|Sohle rollen, Ball umkreisen — er darf nicht weg!',
+    '🔄 Sohlen-Drehungen|Ball mit der Sohle um den Körper ziehen!',
+    '👀 Scannen|10 Sekunden dribbeln und zählen, wer in deiner Hälfte steht!',
+    '⚡ Reaktionspässe|Partner ruft eine Zahl — schnellstmöglich zurückpassen!'
+  ];
+  var DEF={list:DEF_LIST,dur:60};
+  var cfg=load(), lastIdx=-1, timerId=null, remain=0, runningNow=false, audioCtx=null;
+  function load(){ try{ var o=JSON.parse(localStorage.getItem(KEY)); if(o&&Array.isArray(o.list)&&o.list.length) return Object.assign({},DEF,o); }catch(e){} return Object.assign({},DEF); }
+  function save(){ try{ localStorage.setItem(KEY,JSON.stringify(cfg)); }catch(e){} }
+  function $(id){ return document.getElementById(id); }
+  function beep(f,d,dl){ try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    var t=audioCtx.currentTime+(dl||0),o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0.001,t);g.gain.exponentialRampToValueAtTime(0.25,t+0.01);g.gain.exponentialRampToValueAtTime(0.001,t+d/1000);
+    o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+d/1000+0.05);
+  }catch(e){} }
+  function parse(line){
+    line=line.trim(); if(!line) return null;
+    var parts=line.split('|'); var head=parts[0].trim(); var desc=parts.slice(1).join(' | ').trim();
+    var icon=head.length&&head.codePointAt(0)>0x2100 ? String.fromCodePoint(head.codePointAt(0)) : '⚽';
+    var name=icon==='⚽' && !/^[⚽🎯🏃🦶🔄👀🧱⚡]/.test(head) ? head : head.replace(icon,'').trim() || head;
+    return {icon:icon,name:name,desc:desc||name};
+  }
+  function drills(){ var l=cfg.list.map(parse).filter(Boolean); return l.length?l:[{icon:'⚽',name:'Frei dribbeln',desc:"Los geht's!"}]; }
+  function roll(){
+    var ds=drills(); if(!ds.length) return;
+    var i; var guard=0;
+    do { i=Math.floor(Math.random()*ds.length); guard++; } while(i===lastIdx && ds.length>1 && guard<20);
+    lastIdx=i;
+    var d=ds[i];
+    $('dicon').textContent=d.icon; $('dname').textContent=d.name; $('dnext').textContent=d.desc;
+    beep(880,80,0); beep(1180,80,0.12);
+    $('rollBtn').style.display='none'; $('skipBtn').style.display='inline-block';
+    clearInterval(timerId);
+    if(cfg.dur>0){
+      remain=cfg.dur; runningNow=true;
+      renderClock();
+      timerId=setInterval(function(){
+        remain--;
+        if(remain<=3&&remain>0) beep(600,70,0);
+        if(remain<=0){ clearInterval(timerId); runningNow=false; beep(1400,140,0); beep(1400,140,0.2); beep(1400,140,0.4);
+          $('dclock').textContent='⏰ Zeit!'; nextRoll(); return; }
+        renderClock();
+      },1000);
+    } else { $('dclock').textContent=''; }
+  }
+  function renderClock(){ var m=Math.floor(remain/60), s=remain%60; $('dclock').textContent=m+':'+(s<10?'0':'')+s; }
+  function nextRoll(){ $('rollBtn').style.display='inline-block'; $('skipBtn').style.display='none'; $('dclock').textContent=''; clearInterval(timerId); runningNow=false; }
+  $('rollBtn').addEventListener('click',roll);
+  $('skipBtn').addEventListener('click',nextRoll);
+  $('settingsBtn').addEventListener('click',function(){ $('panel').classList.toggle('open'); });
+  var ta=$('drillText'); ta.value=cfg.list.join('\n');
+  ta.addEventListener('change',function(){ cfg.list=ta.value.split('\n').map(function(s){return s.trim();}).filter(Boolean); if(!cfg.list.length) cfg.list=DEF_LIST.slice(); save(); renderChips(); });
+  var durSel=$('durSel'); durSel.value=String(cfg.dur);
+  durSel.addEventListener('change',function(){ cfg.dur=parseInt(durSel.value,10); save(); });
+  function renderChips(){
+    var box=$('quickChips'); box.innerHTML='';
+    drills().forEach(function(d,idx){
+      var b=document.createElement('button'); b.className='chip'; b.textContent=d.icon+' '+d.name;
+      b.addEventListener('click',function(){ lastIdx=idx; var ds=drills(); $('dicon').textContent=ds[idx].icon; $('dname').textContent=ds[idx].name; $('dnext').textContent=ds[idx].desc; beep(880,80,0); $('rollBtn').style.display='none'; $('skipBtn').style.display='inline-block'; });
+      box.appendChild(b);
+    });
+  }
+  renderChips();
+})();
+</script>
+</body>
+</html>

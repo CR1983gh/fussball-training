@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>🧠 Merksport</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--fg:#e6edf3;--dim:#8b949e;--accent:#ffd400;--line:#30363d;--gruen:#46a758;--rot:#e5484d;--blau:#3e63dd;--lila:#8e4ec6}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;border-bottom:1px solid var(--line)}
+  header a{color:var(--dim);text-decoration:none;font-size:.85rem}
+  header h1{font-size:1.05rem;margin:0;flex:1}
+  main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;gap:1rem;text-align:center}
+  #show{width:min(92vw,520px);min-height:44vmin;background:var(--card);border:2px solid var(--line);border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;padding:1rem}
+  .steps{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center;align-items:center}
+  .step{font-size:16vmin;font-weight:800;line-height:1.1;font-family:ui-monospace,Consolas,monospace;transition:opacity .2s}
+  .step.c{font-size:12vmin;padding:.1em .18em;border-radius:.18em;color:#0d1117}
+  .step.dim{opacity:.18}
+  .arrow{font-size:16vmin;font-weight:800}
+  #hint{font-size:1rem;color:var(--accent);min-height:1.4em;font-weight:700}
+  #sub{font-size:.85rem;color:var(--dim);min-height:1.2em}
+  #big{font-size:22vmin;font-weight:800;font-family:ui-monospace,Consolas,monospace;line-height:1}
+  .btn{border:none;border-radius:999px;font-weight:800;cursor:pointer;font-family:inherit}
+  #startBtn{background:var(--accent);color:#111;font-size:1.1rem;padding:.85rem 2.6rem;margin-top:.3rem}
+  #settingsBtn{background:transparent;color:var(--dim);border:1px solid var(--line);font-size:.8rem;padding:.45rem 1rem;border-radius:999px}
+  #panel{width:min(92vw,520px);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1rem;font-size:.9rem;display:none;text-align:left}
+  #panel.open{display:block}
+  #panel label{display:block;margin:.7rem 0 .2rem;color:var(--dim);font-size:.8rem}
+  #panel select,#panel input[type=number]{width:100%;padding:.5rem;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:1rem}
+  .row2{display:flex;gap:.6rem}
+  .row2>div{flex:1}
+  footer{text-align:center;font-size:.7rem;color:var(--dim);padding:.8rem}
+  footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+<header>
+  <a href="../index.html">← Training</a>
+  <h1>🧠 Merksport</h1>
+  <span style="width:60px"></span>
+</header>
+<main>
+  <div id="show"><div id="big">🧠</div></div>
+  <div id="hint"></div>
+  <div id="sub">Merke die Zeichen — dann alle ausführen, in der richtigen Reihenfolge!</div>
+  <button class="btn" id="startBtn">▶ Los!</button>
+  <button class="btn" id="settingsBtn">⚙ Einstellungen</button>
+  <div id="panel">
+    <div class="row2">
+      <div><label>Zeichen pro Runde</label>
+        <select id="lenSel"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option></select></div>
+      <div><label>Was kommt vor?</label>
+        <select id="typeSel"><option value="mix" selected>Zahlen + Richtungen</option><option value="num">nur Zahlen</option><option value="dir">nur Richtungen</option></select></div>
+    </div>
+    <div class="row2">
+      <div><label>Anzeige pro Zeichen</label>
+        <select id="msSel"><option value="1500">langsam (1,5s)</option><option value="900" selected>normal (0,9s)</option><option value="550">schnell (0,55s)</option></select></div>
+      <div><label>Töne</label>
+        <select id="sndSel"><option value="1" selected>An</option><option value="0">Aus</option></select></div>
+    </div>
+    <label so-label>So wird's gespielt</label>
+    <div style="color:var(--dim);font-size:.82rem;line-height:1.5" so-text>
+      Die App zeigt dir nacheinander Zeichen. <b>MERKE</b> dir alle! Wenn sie weg sind, führst du sie in der richtigen Reihenfolge aus:<br>
+      • <b>Zahl</b> = so viele Ballkontakte/Taps<br>
+      • <b>Pfeil</b> = Passe/Renne in diese Richtung<br>
+      Tipp falsch? Kein Stress — Konzentration hoch, nächste Runde!
+    </div>
+    <div class="row2">
+      <div><label>Zahl-Aktion (was machen?)</label><input type="text" id="numAct" value="Ballkontakte" maxlength="20"></div>
+      <div><label>Pfeil-Aktion (was machen?)</label><input type="text" id="dirAct" value="Pass in Richtung" maxlength="20"></div>
+    </div>
+  </div>
+</main>
+<footer><a href="https://cr1983gh.github.io/">⚓ Deck 7</a> · Merksport</footer>
+<script>
+(function(){
+  'use strict';
+  var KEY='***';
+  var DEF={len:3,type:'mix',ms:900,snd:1,numAct:'Ballkontakte',dirAct:'Pass in Richtung'};
+  var cfg=load();
+  var ARROWS=['➡','⬅','⬆','⬇','↗','↘','↖','↙'];
+  var running=false, seq=[], shown=false, audioCtx=null, timerId=null;
+
+  function load(){ try{ var o=JSON.parse(localStorage.getItem(KEY)); return o?Object.assign({},DEF,o):Object.assign({},DEF); }catch(e){ return Object.assign({},DEF); } }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(cfg)); }catch(e){} }
+
+  var $=function(id){ return document.getElementById(id); };
+  var show=$('show'), hint=$('hint'), sub=$('sub'), big=$('big'), startBtn=$('startBtn');
+
+  function beep(f,d,delay){ if(!cfg.snd) return; try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    var t=(audioCtx.currentTime+(delay||0)), o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.frequency.value=f; o.type='sine'; g.gain.setValueAtTime(0.001,t);
+    g.gain.exponentialRampToValueAtTime(0.25,t+0.01); g.gain.exponentialRampToValueAtTime(0.001,t+d/1000);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+d/1000+0.05);
+  }catch(e){} }
+
+  function randSeq(){
+    var s=[]; for(var i=0;i<cfg.len;i++){
+      var kind = cfg.type==='num'?'n' : cfg.type==='dir'?'d' : (Math.random()<0.5?'n':'d');
+      if(kind==='n') s.push({t:'n',v:1+Math.floor(Math.random()*5)});
+      else { var a=ARROWS[Math.floor(Math.random()*ARROWS.length)]; if(i>0&&s[i-1].t==='d'&&s[i-1].v===a) a=ARROWS[(ARROWS.indexOf(a)+4)%8]; s.push({t:'d',v:a}); }
+    } return s;
+  }
+  function stepHTML(item,state){
+    if(item.t==='n') return '<div class="step '+(state||'')+'">'+item.v+'</div>';
+    return '<div class="step arrow '+(state||'')+'">'+item.v+'</div>';
+  }
+  function renderSteps(states){
+    var h='<div class="steps">';
+    for(var i=0;i<seq.length;i++) h+=stepHTML(seq[i], states?states[i]:'');
+    return h+'</div>';
+  }
+
+  function newRound(){
+    if(!running) return;
+    seq=randSeq(); shown=false;
+    show.innerHTML=renderSteps(seq.map(function(){return '';}));
+    hint.textContent='MERKEN! 👀'; hint.style.color='var(--accent)';
+    sub.textContent=seq.length+' Zeichen kommen nacheinander';
+    // Zeichen einzeln hervorheben
+    var i=0;
+    function step(){
+      if(!running) return;
+      if(i>=seq.length){ hideSeq(); return; }
+      show.innerHTML=renderSteps(seq.map(function(_,j){ return j===i?'':'dim'; }));
+      beep(700+i*140,60,0);
+      i++;
+      timerId=setTimeout(step,cfg.ms);
+    }
+    timerId=setTimeout(step,300);
+  }
+  function hideSeq(){
+    shown=true;
+    show.innerHTML='<div style="font-size:14vmin;font-weight:800;color:var(--accent)">❓</div>';
+    hint.textContent='JETZT AUSFÜHREN! 🏃'; hint.style.color='var(--gruen)';
+    var desc=[];
+    for(var i2=0;i2<seq.length;i2++) desc.push(seq[i2].t==='n'?(seq[i2].v+'×'):seq[i2].v);
+    sub.textContent=cfg.numAct+' / '+cfg.dirAct+' — ausführen!';
+    beep(1300,90,0); beep(1300,90,0.15);
+    timerId=setTimeout(newRound, Math.max(4000, cfg.len*1600));
+  }
+
+  function begin(){
+    clearTimeout(timerId);
+    running=true; startBtn.textContent='⏸ Pause';
+    var c=3;
+    show.innerHTML='<div id="big">'+c+'</div>'; hint.textContent=''; sub.textContent='Bereit machen...';
+    function cnt(){
+      if(!running) return;
+      if(c>0){ beep(420,140,0); show.innerHTML='<div id="big">'+c+'</div>'; c--; timerId=setTimeout(cnt,800); }
+      else { show.innerHTML='<div id="big" style="font-size:18vmin">LOS!</div>'; beep(1400,90,0); beep(1400,90,0.12); timerId=setTimeout(newRound,700); }
+    }
+    cnt();
+  }
+  function pause(){ running=false; clearTimeout(timerId); startBtn.textContent='▶ Weiter'; show.innerHTML='<div id="big">⏸</div>'; hint.textContent=''; }
+  startBtn.addEventListener('click',function(){ if(!running) begin(); else pause(); });
+
+  var panel=$('panel');
+  $('settingsBtn').addEventListener('click',function(){ panel.classList.toggle('open'); });
+  function bind(id,fn){ $(id).addEventListener('change',function(e){ fn(e.target.value); save(); }); }
+  $('lenSel').value=cfg.len; $('typeSel').value=cfg.type; $('msSel').value=String(cfg.ms); $('sndSel').value=String(cfg.snd);
+  $('numAct').value=cfg.numAct; $('dirAct').value=cfg.dirAct;
+  bind('lenSel',function(v){ cfg.len=parseInt(v,10); });
+  bind('typeSel',function(v){ cfg.type=v; });
+  bind('msSel',function(v){ cfg.ms=parseInt(v,10); });
+  bind('sndSel',function(v){ cfg.snd=parseInt(v,10); });
+  bind('numAct',function(v){ cfg.numAct=v||'Ballkontakte'; });
+  bind('dirAct',function(v){ cfg.dirAct=v||'Pass in Richtung'; });
+  window.addEventListener('visibilitychange',function(){ if(document.hidden&&running) pause(); });
+})();
+</script>
+</body>
+</html>

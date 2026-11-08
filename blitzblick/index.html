@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>👀 Blitz-Blick</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--fg:#e6edf3;--dim:#8b949e;--accent:#ffd400;--line:#30363d;--gruen:#46a758;--rot:#e5484d}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;border-bottom:1px solid var(--line)}
+  header a{color:var(--dim);text-decoration:none;font-size:.85rem}
+  header h1{font-size:1.05rem;margin:0;flex:1}
+  main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;gap:1rem;text-align:center}
+  #field{position:relative;width:min(94vw,560px);height:min(70vh,420px);background:var(--card);border:2px solid var(--line);border-radius:18px;overflow:hidden}
+  .corner{position:absolute;width:46%;height:44%;display:flex;align-items:center;justify-content:center;font-size:14vmin;font-weight:800;font-family:ui-monospace,Consolas,monospace;opacity:0;transition:opacity .06s}
+  .corner.on{opacity:1}
+  #c1{top:0;left:0}#c2{top:0;right:0}#c3{bottom:0;left:0}#c4{bottom:0;right:0}
+  #msg{font-size:1rem;color:var(--accent);min-height:1.4em;font-weight:700}
+  #sub{font-size:.85rem;color:var(--dim);min-height:1.2em}
+  .btn{border:none;border-radius:999px;font-weight:800;cursor:pointer;font-family:inherit}
+  #startBtn{background:var(--accent);color:#111;font-size:1.1rem;padding:.85rem 2.6rem}
+  #settingsBtn{background:transparent;color:var(--dim);border:1px solid var(--line);font-size:.8rem;padding:.45rem 1rem;border-radius:999px}
+  #panel{width:min(94vw,560px);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1rem;font-size:.9rem;display:none;text-align:left}
+  #panel.open{display:block}
+  #panel label{display:block;margin:.7rem 0 .2rem;color:var(--dim);font-size:.8rem}
+  #panel select{width:100%;padding:.5rem;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:1rem}
+  #score{display:flex;gap:.8rem;font-size:.95rem}
+  #score b{color:var(--gruen)} #score i{color:var(--rot);font-style:normal}
+  footer{text-align:center;font-size:.7rem;color:var(--dim);padding:.8rem}
+  footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+<header>
+  <a href="../index.html">← Training</a>
+  <h1>👀 Blitz-Blick</h1>
+  <span style="width:60px"></span>
+</header>
+<main>
+  <div id="field">
+    <div class="corner" id="c1"></div><div class="corner" id="c2"></div>
+    <div class="corner" id="c3"></div><div class="corner" id="c4"></div>
+  </div>
+  <div id="msg"></div>
+  <div id="score"><span>Punkte: <b id="pts">0</b></span><span>Fehler: <i id="err">0</i></span></div>
+  <div id="sub">Zahl kurz aufblitzen lassen — merken, laut sagen oder notieren!</div>
+  <button class="btn" id="startBtn">▶ Los!</button>
+  <button class="btn" id="settingsBtn">⚙ Einstellungen</button>
+  <div id="panel">
+    <label>Wie schnell blitzt die Zahl?</label>
+    <select id="msSel"><option value="700">langsam (0,7s)</option><option value="450" selected>normal (0,45s)</option><option value="250">blitzschnell (0,25s)</option></select>
+    <label>Pausen zwischen den Blitzen</label>
+    <select id="gapSel"><option value="4000">viel Zeit (4s)</option><option value="2500" selected>normal (2,5s)</option><option value="1500">wenig Zeit (1,5s)</option></select>
+    <label>Was wird gezeigt?</label>
+    <select id="whatSel"><option value="num" selected>Zahlen (1–9)</option><option value="col">Farben (rot/grün/gelb)</option><option value="mix">Gemischt</option></select>
+    <label>Töne</label>
+    <select id="sndSel"><option value="1" selected>An</option><option value="0">Aus</option></select>
+    <label so-label>So geht's</label>
+    <div style="color:var(--dim);font-size:.82rem;line-height:1.5" so-text>
+      Die Zahl/blitz erscheint <b>kurz in einer Ecke</b> — erfasse sie aus dem Blickwinkel oder mit schnellem Blick, ohne den Kopf zu drehen (wie beim Scannen im Spiel!). Sag sie laut oder merke sie dir für die Runde.
+    </div>
+  </div>
+</main>
+<footer><a href="https://cr1983gh.github.io/">⚓ Deck 7</a> · Blitz-Blick</footer>
+<script>
+(function(){
+  'use strict';
+  var KEY='***';
+  var DEF={ms:450,gap:2500,what:'num',snd:1};
+  var cfg=load(), running=false, audioCtx=null, timerId=null, pts=0, err=0, expect=[], roundN=0;
+  var COLS=[['rot','#e5484d'],['gruen','#46a758'],['gelb','#ffd400']];
+  function load(){ try{ var o=JSON.parse(localStorage.getItem(KEY)); return o?Object.assign({},DEF,o):Object.assign({},DEF); }catch(e){ return Object.assign({},DEF); } }
+  function save(){ try{ localStorage.setItem(KEY,JSON.stringify(cfg)); }catch(e){} }
+  function $(id){ return document.getElementById(id); }
+  function beep(f,d,dl){ if(!cfg.snd) return; try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    var t=audioCtx.currentTime+(dl||0),o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0.001,t);g.gain.exponentialRampToValueAtTime(0.22,t+0.01);g.gain.exponentialRampToValueAtTime(0.001,t+d/1000);
+    o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+d/1000+0.05);
+  }catch(e){} }
+  function hideAll(){ ['c1','c2','c3','c4'].forEach(function(id){ var e=$(id); e.classList.remove('on'); }); }
+  function randomItem(){
+    if(cfg.what==='num') return String(1+Math.floor(Math.random()*9));
+    if(cfg.what==='col'){ var c=COLS[Math.floor(Math.random()*COLS.length)]; return {t:c[0],col:c[1]}; }
+    return Math.random()<0.5 ? String(1+Math.floor(Math.random()*9)) : (function(){var c=COLS[Math.floor(Math.random()*COLS.length)];return {t:c[0],col:c[1]};})();
+  }
+  function blitzOnce(){
+    if(!running) return;
+    hideAll();
+    var id='c'+(1+Math.floor(Math.random()*4));
+    var item=randomItem();
+    var el=$(id);
+    if(typeof item==='string'){ el.textContent=item; el.style.color='var(--fg)'; expect.push(item); }
+    else { el.textContent='●'; el.style.color=item.col; expect.push(item.t); }
+    el.classList.add('on');
+    beep(900,40,0);
+    timerId=setTimeout(function(){
+      el.classList.remove('on');
+      afterBlitz();
+    }, cfg.ms);
+  }
+  function afterBlitz(){
+    if(!running) return;
+    roundN++;
+    if(roundN%5===0){
+      $('msg').textContent='🗣️ Runde! Sag deine 5 Ergebnisse!';
+      $('msg').style.color='var(--accent)';
+      beep(1400,90,0);
+      timerId=setTimeout(function(){
+        $('msg').textContent="Weiter geht's...";
+        expect=[];
+        timerId=setTimeout(blitzOnce,cfg.gap);
+      },5000);
+    } else {
+      timerId=setTimeout(blitzOnce,cfg.gap);
+    }
+  }
+  function begin(){
+    running=true; pts=0; err=0; roundN=0; expect=[];
+    $('startBtn').textContent='⏸ Pause';
+    var c=3;
+    $('msg').textContent='';
+    function cnt(){ if(!running) return;
+      if(c>0){ $('msg').textContent=c+'...'; beep(420,140,0); c--; timerId=setTimeout(cnt,800); }
+      else { $('msg').textContent='LOS!'; beep(1400,90,0); timerId=setTimeout(blitzOnce,600); }
+    } cnt();
+  }
+  function pause(){ running=false; clearTimeout(timerId); hideAll(); $('startBtn').textContent='▶ Weiter'; $('msg').textContent='Pause'; }
+  $('startBtn').addEventListener('click',function(){ if(!running) begin(); else pause(); });
+  $('settingsBtn').addEventListener('click',function(){ $('panel').classList.toggle('open'); });
+  function bind(id,fn){ $(id).addEventListener('change',function(e){ fn(e.target.value); save(); }); }
+  $('msSel').value=String(cfg.ms); $('gapSel').value=String(cfg.gap); $('whatSel').value=cfg.what; $('sndSel').value=String(cfg.snd);
+  bind('msSel',function(v){cfg.ms=parseInt(v,10);});
+  bind('gapSel',function(v){cfg.gap=parseInt(v,10);});
+  bind('whatSel',function(v){cfg.what=v;});
+  bind('sndSel',function(v){cfg.snd=parseInt(v,10);});
+  window.addEventListener('visibilitychange',function(){ if(document.hidden&&running) pause(); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>🌈 Farb-Blitz</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #ffd400;
+    --border: #30363d;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overflow-x: hidden;
+  }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    font-size: 15px;
+    gap: 10px;
+  }
+  header .title { font-weight: 700; letter-spacing: .02em; }
+  header a.back { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  header a.back:hover { color: var(--accent); }
+
+  /* ---- Color display ---- */
+  #displayWrap {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    min-height: 45vh;
+    position: relative;
+  }
+  #colorBox {
+    width: min(45vmin, 90vw);
+    aspect-ratio: 1 / 1;
+    border: 2px solid #6e7681;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    transition: background-color .08s linear;
+  }
+  #boxWord {
+    font-size: clamp(34px, 12vmin, 90px);
+    font-weight: 900;
+    letter-spacing: .04em;
+    line-height: 1;
+    user-select: none;
+    text-align: center;
+    padding: 0 6px;
+  }
+  #colorName {
+    margin-top: 12px;
+    font-size: clamp(20px, 6vmin, 36px);
+    font-weight: 800;
+    line-height: 1.1;
+    user-select: none;
+    min-height: 1.2em;
+    text-align: center;
+  }
+  #hint {
+    margin-top: 12px;
+    font-size: clamp(13px, 3.6vw, 19px);
+    color: var(--muted);
+    text-align: center;
+    min-height: 1.4em;
+    user-select: none;
+    padding: 0 4px;
+  }
+  #hint.stroopHint { color: var(--accent); font-weight: 700; }
+
+  /* ---- End screen overlay ---- */
+  #endScreen {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    border-radius: 12px;
+    z-index: 5;
+  }
+  #endScreen.show { display: flex; }
+  #endScreen .big {
+    font-size: clamp(34px, 10vmin, 72px);
+    font-weight: 900;
+    text-align: center;
+  }
+  #restartBtn {
+    padding: 20px 34px;
+    font-size: 24px;
+    font-weight: 800;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    background: var(--accent);
+    color: #0d1117;
+  }
+  #restartBtn:active { transform: scale(.985); }
+
+  /* ---- Controls ---- */
+  #controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 14px 4px;
+  }
+  #startBtn {
+    width: min(92vw, 420px);
+    padding: 18px 20px;
+    font-size: 22px;
+    font-weight: 800;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    background: var(--accent);
+    color: #0d1117;
+    letter-spacing: .02em;
+  }
+  #startBtn:active { transform: scale(.985); }
+  #startBtn.running { background: #21262d; color: var(--text); border: 2px solid var(--border); }
+
+  #settingsToggle {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 15px;
+    cursor: pointer;
+    padding: 6px 10px;
+  }
+  #settingsToggle:hover { color: var(--accent); }
+
+  #settings {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    text-align: left;
+  }
+  #settings.open { display: flex; }
+  #settings label { font-size: 14px; color: var(--text); display: block; margin-bottom: 6px; }
+  #settings .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  input[type="range"] {
+    flex: 1 1 160px;
+    accent-color: var(--accent);
+    min-width: 140px;
+  }
+  #intervalVal { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; min-width: 3.2em; }
+  select, input[type="text"] {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 15px;
+  }
+  select:focus, input[type="text"]:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+  .toggleRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .switch { position: relative; display: inline-block; width: 52px; height: 30px; flex: 0 0 auto; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .sliderSw {
+    position: absolute; inset: 0;
+    background: #30363d;
+    border-radius: 30px;
+    transition: background .15s;
+    cursor: pointer;
+  }
+  .sliderSw::before {
+    content: "";
+    position: absolute;
+    width: 24px; height: 24px;
+    left: 3px; top: 3px;
+    background: #e6edf3;
+    border-radius: 50%;
+    transition: transform .15s;
+  }
+  .switch input:checked + .sliderSw { background: var(--accent); }
+  .switch input:checked + .sliderSw::before { transform: translateX(22px); }
+
+  #secPuzzle, #secTwo { display: none; flex-direction: column; gap: 12px; }
+  #secPuzzle.show, #secTwo.show { display: flex; }
+  .twoCol { display: flex; gap: 10px; }
+  .twoCol > div { flex: 1 1 0; min-width: 0; }
+
+  /* ---- Training hint ---- */
+  #drillHint {
+    margin: 14px 14px 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--muted);
+    position: relative;
+  }
+  #drillHint strong { color: var(--text); }
+  #drillClose {
+    position: absolute;
+    top: 6px; right: 8px;
+    background: none; border: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+  }
+  #drillClose:hover { color: var(--accent); }
+  #drillHint.hidden { display: none; }
+
+  footer {
+    text-align: center;
+    padding: 10px 0 14px;
+    font-size: 11px;
+    color: #484f58;
+  }
+  footer a { color: #484f58; }
+  footer a:hover { color: var(--accent); }
+
+  @media (min-width: 700px) {
+    #colorBox { width: min(48vmin, 90vw); }
+    #startBtn { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="title">🌈 Farb-Blitz</span>
+  <a class="back" href="../index.html">← Training</a>
+</header>
+
+<div id="displayWrap">
+  <div id="colorBox"><span id="boxWord"></span></div>
+  <div id="colorName"></div>
+  <div id="hint"></div>
+
+  <div id="endScreen">
+    <div class="big">Geschafft! 🎉</div>
+    <button id="restartBtn" type="button">▶ Nochmal</button>
+  </div>
+</div>
+
+<div id="controls">
+  <button id="startBtn" type="button">▶ Start</button>
+  <button id="settingsToggle" type="button" aria-expanded="false">⚙ Einstellungen</button>
+
+  <div id="settings">
+    <div>
+      <label for="intervalSlider">Intervall: <span id="intervalVal">1,0 s</span></label>
+      <input type="range" id="intervalSlider" min="0.5" max="3.0" step="0.1" value="1.0">
+    </div>
+
+    <div>
+      <label for="modeSelect">Modus</label>
+      <select id="modeSelect">
+        <option value="puzzle" selected>Puzzle (5 Farben · jede Farbe = Aktion)</option>
+        <option value="zwei">Zwei Farben (links / rechts)</option>
+        <option value="stroop">Stroop (Fänger!)</option>
+      </select>
+    </div>
+
+    <div id="secPuzzle">
+      <div><label for="actRot">🔴 Rot – Aktion</label><input type="text" id="actRot" maxlength="30"></div>
+      <div><label for="actBlau">🔵 Blau – Aktion</label><input type="text" id="actBlau" maxlength="30"></div>
+      <div><label for="actGelb">🟡 Gelb – Aktion</label><input type="text" id="actGelb" maxlength="30"></div>
+      <div><label for="actGruen">🟢 Grün – Aktion</label><input type="text" id="actGruen" maxlength="30"></div>
+      <div><label for="actLila">🟣 Lila – Aktion</label><input type="text" id="actLila" maxlength="30"></div>
+    </div>
+
+    <div id="secTwo">
+      <div class="twoCol">
+        <div>
+          <label for="colorASelect">Farbe A</label>
+          <select id="colorASelect"></select>
+        </div>
+        <div>
+          <label for="colorBSelect">Farbe B</label>
+          <select id="colorBSelect"></select>
+        </div>
+      </div>
+      <div><label id="lblActA" for="actA">Aktion A</label><input type="text" id="actA" maxlength="30"></div>
+      <div><label id="lblActB" for="actB">Aktion B</label><input type="text" id="actB" maxlength="30"></div>
+    </div>
+
+    <div>
+      <label for="timerSelect">Übungs-Stopp-Uhr</label>
+      <select id="timerSelect">
+        <option value="0" selected>Aus</option>
+        <option value="2">2 Minuten</option>
+        <option value="5">5 Minuten</option>
+        <option value="10">10 Minuten</option>
+      </select>
+    </div>
+
+    <div class="toggleRow">
+      <label for="soundToggle" style="margin:0;">Signalton bei jedem Wechsel</label>
+      <span class="switch">
+        <input type="checkbox" id="soundToggle" checked>
+        <span class="sliderSw"></span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div id="drillHint">
+  <button id="drillClose" type="button" title="Hinweis ausblenden" aria-label="Hinweis ausblenden">×</button>
+  <strong>Drill-Aufbau:</strong> Spieler steht mit dem Rücken zum Bildschirm. Auf Pfiff oder
+  Klicksignal umdrehen, die Farbe mit einem Blick erfassen (<strong>&lt;1,5&nbsp;s</strong>) und die
+  zugeordnete Aktion ausführen. Beim Stroop-Modus bewusst verwirren lassen:
+  <strong>nie auf das Wort reagieren, immer auf die Farbe der Buchstaben!</strong>
+  Distanz steigern: zuerst 3&nbsp;m, später 8–12&nbsp;m.
+</div>
+
+<footer>
+  <a href="https://cr1983gh.github.io/">⚓ Deck 7</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var LS_KEY = "zsConfig-blitz";
+
+  var COLORS = {
+    rot:   { name: "Rot",   hex: "#e5484d", emoji: "🔴" },
+    blau:  { name: "Blau",  hex: "#3e63dd", emoji: "🔵" },
+    gelb:  { name: "Gelb",  hex: "#ffd400", emoji: "🟡" },
+    gruen: { name: "Grün",  hex: "#46a758", emoji: "🟢" },
+    lila:  { name: "Lila",  hex: "#8e4ec6", emoji: "🟣" }
+  };
+  var ALL_IDS = ["rot", "blau", "gelb", "gruen", "lila"];
+  var SIMPLE_IDS = ["rot", "blau", "gelb"]; // Stroop: nur 3 Woerter
+
+  var DEFAULT_ACTIONS = {
+    rot: "Stopp",
+    blau: "Dribbeln",
+    gelb: "Sprint",
+    gruen: "Drehung",
+    lila: "Knie hebt"
+  };
+
+  var DEFAULTS = {
+    interval: 1.0,
+    mode: "puzzle",
+    actions: DEFAULT_ACTIONS,
+    colorA: "rot",
+    colorB: "blau",
+    sound: true,
+    timerMin: 0,
+    drillHidden: false
+  };
+
+  var cfg = loadCfg();
+
+  var elBox      = document.getElementById("colorBox");
+  var elWord     = document.getElementById("boxWord");
+  var elName     = document.getElementById("colorName");
+  var elHint     = document.getElementById("hint");
+  var elStart    = document.getElementById("startBtn");
+  var elToggle   = document.getElementById("settingsToggle");
+  var elSettings = document.getElementById("settings");
+  var elSlider   = document.getElementById("intervalSlider");
+  var elIntVal   = document.getElementById("intervalVal");
+  var elMode     = document.getElementById("modeSelect");
+  var elSecPuzzle = document.getElementById("secPuzzle");
+  var elSecTwo   = document.getElementById("secTwo");
+  var elColorA   = document.getElementById("colorASelect");
+  var elColorB   = document.getElementById("colorBSelect");
+  var elLblActA  = document.getElementById("lblActA");
+  var elLblActB  = document.getElementById("lblActB");
+  var elActA     = document.getElementById("actA");
+  var elActB     = document.getElementById("actB");
+  var elTimer    = document.getElementById("timerSelect");
+  var elSound    = document.getElementById("soundToggle");
+  var elEnd      = document.getElementById("endScreen");
+  var elRestart  = document.getElementById("restartBtn");
+  var elDrill    = document.getElementById("drillHint");
+  var elDrillX   = document.getElementById("drillClose");
+
+  var actInputs = {
+    rot:   document.getElementById("actRot"),
+    blau:  document.getElementById("actBlau"),
+    gelb:  document.getElementById("actGelb"),
+    gruen: document.getElementById("actGruen"),
+    lila:  document.getElementById("actLila")
+  };
+
+  var running = false;      // colors cycling
+  var counting = false;     // 3-2-1 countdown active
+  var timerId = null;       // setTimeout handle (single chain)
+  var lastColor = null;
+  var deadline = null;      // epoch ms for Stopp-Uhr, null = aus
+  var audioCtx = null;
+
+  /* ---------- persistence ---------- */
+  function loadCfg() {
+    var c = {
+      interval: DEFAULTS.interval,
+      mode: DEFAULTS.mode,
+      actions: {},
+      colorA: DEFAULTS.colorA,
+      colorB: DEFAULTS.colorB,
+      sound: DEFAULTS.sound,
+      timerMin: DEFAULTS.timerMin,
+      drillHidden: DEFAULTS.drillHidden
+    };
+    var k;
+    for (k in DEFAULT_ACTIONS) { if (Object.prototype.hasOwnProperty.call(DEFAULT_ACTIONS, k)) c.actions[k] = DEFAULT_ACTIONS[k]; }
+    try {
+      var raw = window.localStorage ? localStorage.getItem(LS_KEY) : null;
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (p && typeof p === "object") {
+          if (typeof p.interval === "number" && p.interval >= 0.5 && p.interval <= 3.0) c.interval = p.interval;
+          if (p.mode === "puzzle" || p.mode === "zwei" || p.mode === "stroop") c.mode = p.mode;
+          if (p.actions && typeof p.actions === "object") {
+            for (k in DEFAULT_ACTIONS) {
+              if (typeof p.actions[k] === "string") c.actions[k] = p.actions[k];
+            }
+          }
+          if (ALL_IDS.indexOf(p.colorA) >= 0) c.colorA = p.colorA;
+          if (ALL_IDS.indexOf(p.colorB) >= 0 && p.colorB !== c.colorA) c.colorB = p.colorB;
+          if (typeof p.sound === "boolean") c.sound = p.sound;
+          if (p.timerMin === 0 || p.timerMin === 2 || p.timerMin === 5 || p.timerMin === 10) c.timerMin = p.timerMin;
+          if (typeof p.drillHidden === "boolean") c.drillHidden = p.drillHidden;
+        }
+      }
+    } catch (e) { /* localStorage nicht verfuegbar oder kaputt -> Defaults */ }
+    return c;
+  }
+
+  function saveCfg() {
+    try {
+      if (window.localStorage) localStorage.setItem(LS_KEY, JSON.stringify(cfg));
+    } catch (e) { /* ignorieren */ }
+  }
+
+  /* ---------- audio ---------- */
+  function ensureAudio() {
+    try {
+      if (!audioCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    } catch (e) { audioCtx = null; }
+  }
+
+  function beep(freq, durMs, whenOffset) {
+    if (!cfg.sound || !audioCtx) return;
+    try {
+      var t0 = audioCtx.currentTime + (whenOffset || 0);
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = "square";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.25, t0 + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + durMs / 1000);
+      osc.connect(gain);
+      gain.connect(audioDestination());
+      osc.start(t0);
+      osc.stop(t0 + durMs / 1000 + 0.02);
+    } catch (e) { /* ignorieren */ }
+  }
+
+  function audioDestination() {
+    return audioCtx ? audioCtx.destination : null;
+  }
+
+  /* ---------- colors ---------- */
+  function activeIds() {
+    if (cfg.mode === "puzzle") return ALL_IDS;
+    return [cfg.colorA, cfg.colorB];
+  }
+
+  function randomColorId() {
+    var pool = activeIds();
+    var id, guard = 0;
+    do {
+      id = pool[Math.floor(Math.random() * pool.length)];
+      guard++;
+    } while (id === lastColor && pool.length > 1 && guard < 50);
+    lastColor = id;
+    return id;
+  }
+
+  function showColor(id) {
+    var c = COLORS[id];
+    if (cfg.mode === "stroop") {
+      // Schriftfarbe = gezogene Farbe; Wort = andere aktive Farbe (nie identisch)
+      var otherId = (id === cfg.colorA) ? cfg.colorB : cfg.colorA;
+      elBox.style.background = "var(--card)";
+      elWord.textContent = COLORS[otherId].name.toUpperCase();
+      elWord.style.color = c.hex;
+      elName.textContent = "";
+    } else {
+      elBox.style.background = c.hex;
+      elWord.textContent = "";
+      elWord.style.color = "";
+      elName.textContent = c.name;
+    }
+  }
+
+  function showNeutral(txt) {
+    elBox.style.background = "var(--bg)";
+    elWord.textContent = txt;
+    elWord.style.color = "#e6edf3";
+    elName.textContent = "";
+  }
+
+  function renderHint() {
+    var a, b;
+    if (cfg.mode === "puzzle") {
+      elHint.classList.remove("stroopHint");
+      var parts = [];
+      for (var i = 0; i < ALL_IDS.length; i++) {
+        var id = ALL_IDS[i];
+        parts.push(COLORS[id].emoji + " " + cfg.actions[id]);
+      }
+      elHint.textContent = parts.join(" · ");
+    } else if (cfg.mode === "zwei") {
+      elHint.classList.remove("stroopHint");
+      a = COLORS[cfg.colorA]; b = COLORS[cfg.colorB];
+      elHint.textContent = a.emoji + " " + cfg.actions[cfg.colorA] + "  |  " + b.emoji + " " + cfg.actions[cfg.colorB];
+    } else {
+      elHint.classList.add("stroopHint");
+      a = COLORS[cfg.colorA]; b = COLORS[cfg.colorB];
+      elHint.textContent = "Reagiere auf die Farbe der Buchstaben!  " +
+        a.emoji + " " + cfg.actions[cfg.colorA] + "  |  " + b.emoji + " " + cfg.actions[cfg.colorB];
+    }
+  }
+
+  /* ---------- timer chain (setTimeout only) ---------- */
+  function clearTimer() {
+    if (timerId !== null) { clearTimeout(timerId); timerId = null; }
+  }
+
+  function tick() {
+    if (deadline !== null && Date.now() >= deadline) { endSession(); return; }
+    showColor(randomColorId());
+    beep(1200, 50, 0);
+    timerId = setTimeout(tick, cfg.interval * 1000);
+  }
+
+  function startCountdown() {
+    counting = true;
+    running = false;
+    clearTimer();
+    lastColor = null;
+    elEnd.classList.remove("show");
+    elStart.textContent = "⏸ Pause";
+    elStart.classList.add("running");
+
+    var steps = ["3", "2", "1"];
+    var i = 0;
+
+    function countStep() {
+      if (!counting) return; // abgebrochen
+      if (i < steps.length) {
+        showNeutral(steps[i]);
+        beep(400, 150, 0); // tief
+        i++;
+        timerId = setTimeout(countStep, 1000);
+      } else {
+        counting = false;
+        showNeutral("LOS");
+        beep(1400, 90, 0);   // doppelt hoch
+        beep(1400, 90, 0.12);
+        running = true;
+        if (cfg.timerMin > 0) deadline = Date.now() + cfg.timerMin * 60000;
+        else deadline = null;
+        timerId = setTimeout(tick, cfg.interval * 1000);
+      }
+    }
+    countStep();
+  }
+
+  function pause() {
+    counting = false;
+    running = false;
+    deadline = null;
+    clearTimer();
+    elStart.textContent = "▶ Start";
+    elStart.classList.remove("running");
+    // aktuelle Anzeige bleibt stehen (eingefroren)
+  }
+
+  function endSession() {
+    counting = false;
+    running = false;
+    deadline = null;
+    clearTimer();
+    elStart.textContent = "▶ Start";
+    elStart.classList.remove("running");
+    elEnd.classList.add("show");
+    beep(1400, 120, 0);
+    beep(1400, 120, 0.15);
+    beep(1800, 200, 0.3);
+  }
+
+  function start() {
+    ensureAudio();
+    startCountdown();
+  }
+
+  /* ---------- settings visibility ---------- */
+  function buildColorSelects() {
+    var ids = (cfg.mode === "stroop") ? SIMPLE_IDS : ALL_IDS;
+    var opts = "";
+    var i;
+    for (i = 0; i < ids.length; i++) {
+      opts += '<option value="' + ids[i] + '">' + COLORS[ids[i]].emoji + " " + COLORS[ids[i]].name + "</option>";
+    }
+    elColorA.innerHTML = opts;
+    elColorB.innerHTML = opts;
+    if (ids.indexOf(cfg.colorA) < 0) cfg.colorA = ids[0];
+    if (ids.indexOf(cfg.colorB) < 0) cfg.colorB = (ids[0] === "blau") ? "gelb" : "blau";
+    if (cfg.colorA === cfg.colorB) {
+      cfg.colorB = ids[(ids.indexOf(cfg.colorA) + 1) % ids.length];
+    }
+    elColorA.value = cfg.colorA;
+    elColorB.value = cfg.colorB;
+  }
+
+  function syncActionFields() {
+    var k;
+    for (k in actInputs) {
+      if (Object.prototype.hasOwnProperty.call(actInputs, k)) actInputs[k].value = cfg.actions[k];
+    }
+    elLblActA.textContent = COLORS[cfg.colorA].emoji + " " + COLORS[cfg.colorA].name + " – Aktion";
+    elLblActB.textContent = COLORS[cfg.colorB].emoji + " " + COLORS[cfg.colorB].name + " – Aktion";
+    elActA.value = cfg.actions[cfg.colorA];
+    elActB.value = cfg.actions[cfg.colorB];
+  }
+
+  function applyMode() {
+    elSecPuzzle.classList.toggle("show", cfg.mode === "puzzle");
+    elSecTwo.classList.toggle("show", cfg.mode !== "puzzle");
+    buildColorSelects();
+    syncActionFields();
+    lastColor = null; // Wiederholungspruefung zuruecksetzen (Modus-/Farbwechsel)
+    showColor(randomColorId());
+    renderHint();
+  }
+
+  /* ---------- UI events ---------- */
+  elStart.addEventListener("click", function () {
+    ensureAudio();
+    if (running || counting) pause(); else start();
+  });
+
+  elRestart.addEventListener("click", function () {
+    ensureAudio();
+    start();
+  });
+
+  elToggle.addEventListener("click", function () {
+    var open = elSettings.classList.toggle("open");
+    elToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+  function fmtSec(v) { return v.toFixed(1).replace(".", ",") + " s"; }
+
+  elSlider.addEventListener("input", function () {
+    cfg.interval = Math.round(parseFloat(elSlider.value) * 10) / 10;
+    elIntVal.textContent = fmtSec(cfg.interval);
+    saveCfg();
+    // laufender Wechsel uebernimmt beim naechsten Tick automatisch
+  });
+
+  elMode.addEventListener("change", function () {
+    cfg.mode = (elMode.value === "zwei" || elMode.value === "stroop") ? elMode.value : "puzzle";
+    applyMode();
+    saveCfg();
+  });
+
+  function bindActionInput(input, colorKey) {
+    input.addEventListener("input", function () {
+      cfg.actions[colorKey] = input.value;
+      if (cfg.mode !== "puzzle" && colorKey === cfg.colorA) { elActA.value = input.value; }
+      if (cfg.mode !== "puzzle" && colorKey === cfg.colorB) { elActB.value = input.value; }
+      renderHint();
+      saveCfg();
+    });
+  }
+  bindActionInput(actInputs.rot, "rot");
+  bindActionInput(actInputs.blau, "blau");
+  bindActionInput(actInputs.gelb, "gelb");
+  bindActionInput(actInputs.gruen, "gruen");
+  bindActionInput(actInputs.lila, "lila");
+
+  elActA.addEventListener("input", function () {
+    cfg.actions[cfg.colorA] = elActA.value;
+    actInputs[cfg.colorA].value = elActA.value;
+    renderHint();
+    saveCfg();
+  });
+  elActB.addEventListener("input", function () {
+    cfg.actions[cfg.colorB] = elActB.value;
+    actInputs[cfg.colorB].value = elActB.value;
+    renderHint();
+    saveCfg();
+  });
+
+  elColorA.addEventListener("change", function () {
+    cfg.colorA = elColorA.value;
+    if (cfg.colorA === cfg.colorB) {
+      var ids = (cfg.mode === "stroop") ? SIMPLE_IDS : ALL_IDS;
+      cfg.colorB = ids[(ids.indexOf(cfg.colorA) + 1) % ids.length];
+    }
+    applyMode();
+    saveCfg();
+  });
+  elColorB.addEventListener("change", function () {
+    cfg.colorB = elColorB.value;
+    if (cfg.colorA === cfg.colorB) {
+      var ids = (cfg.mode === "stroop") ? SIMPLE_IDS : ALL_IDS;
+      cfg.colorA = ids[(ids.indexOf(cfg.colorB) + 1) % ids.length];
+    }
+    applyMode();
+    saveCfg();
+  });
+
+  elTimer.addEventListener("change", function () {
+    var v = parseInt(elTimer.value, 10);
+    cfg.timerMin = (v === 2 || v === 5 || v === 10) ? v : 0;
+    saveCfg();
+  });
+
+  elSound.addEventListener("change", function () {
+    cfg.sound = elSound.checked;
+    if (cfg.sound) ensureAudio();
+    saveCfg();
+  });
+
+  elDrillX.addEventListener("click", function () {
+    cfg.drillHidden = true;
+    elDrill.classList.add("hidden");
+    saveCfg();
+  });
+
+  /* ---------- background tab handling ---------- */
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden && (running || counting)) {
+      pause(); // sauber in den Pausen-Zustand, nicht mitten im Intervall weitertackern
+    }
+  });
+
+  /* ---------- init ---------- */
+  function init() {
+    elSlider.value = String(cfg.interval);
+    elIntVal.textContent = fmtSec(cfg.interval);
+    elMode.value = cfg.mode;
+    elTimer.value = String(cfg.timerMin);
+    elSound.checked = !!cfg.sound;
+    if (cfg.drillHidden) elDrill.classList.add("hidden");
+    applyMode(); // Modus-Sektionen, Farbwahl, erste Farbe + Merkhilfe
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

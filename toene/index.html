@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>🔊 Ton-Codierung</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--fg:#e6edf3;--dim:#8b949e;--accent:#ffd400;--line:#30363d;--gruen:#46a758}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;border-bottom:1px solid var(--line)}
+  header a{color:var(--dim);text-decoration:none;font-size:.85rem}
+  header h1{font-size:1.05rem;margin:0;flex:1}
+  main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;gap:1rem;text-align:center}
+  #big{font-size:16vmin;min-height:20vmin;display:flex;align-items:center;justify-content:center}
+  #msg{font-size:1.05rem;color:var(--accent);min-height:1.4em;font-weight:700}
+  #sub{font-size:.9rem;color:var(--dim);min-height:2.6em;max-width:420px;line-height:1.5}
+  .btn{border:none;border-radius:999px;font-weight:800;cursor:pointer;font-family:inherit}
+  #startBtn{background:var(--accent);color:#111;font-size:1.1rem;padding:.85rem 2.6rem}
+  #againBtn{background:transparent;border:1px solid var(--line);color:var(--fg);font-size:.9rem;padding:.5rem 1.3rem;border-radius:999px}
+  #settingsBtn{background:transparent;color:var(--dim);border:1px solid var(--line);font-size:.8rem;padding:.45rem 1rem;border-radius:999px}
+  #panel{width:min(94vw,540px);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1rem;font-size:.9rem;display:none;text-align:left}
+  #panel.open{display:block}
+  #panel label{display:block;margin:.7rem 0 .2rem;color:var(--dim);font-size:.8rem}
+  #panel select,#panel input[type=text]{width:100%;padding:.5rem;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:1rem}
+  footer{text-align:center;font-size:.7rem;color:var(--dim);padding:.8rem}
+  footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+<header>
+  <a href="../index.html">← Training</a>
+  <h1>🔊 Ton-Codierung</h1>
+  <span style="width:60px"></span>
+</header>
+<main>
+  <div id="big">🔊</div>
+  <div id="msg"></div>
+  <div id="sub">Höre zu wie oft es piepst — und mach die passende Aktion! Bildschirm musst du dafür NICHT anschauen.</div>
+  <button class="btn" id="startBtn">▶ Los!</button>
+  <button class="btn" id="againBtn" style="display:none">🔁 Nochmal anhören</button>
+  <button class="btn" id="settingsBtn">⚙ Einstellungen</button>
+  <div id="panel">
+    <label>Aktion bei 1 Pfiff</label><input type="text" id="a1" maxlength="24">
+    <label>Aktion bei 2 Pfiffen</label><input type="text" id="a2" maxlength="24">
+    <label>Aktion bei 3 Pfiffen</label><input type="text" id="a3" maxlength="24">
+    <label>Abstand zwischen den Pfiffen</label>
+    <select id="gapSel"><option value="250">kurz (für Profis)</option><option value="450" selected>normal</option><option value="700">lang (zum Lernen)</option></select>
+    <label>Runde alle</label>
+    <select id="everySel"><option value="2000" selected>2 Sekunden</option><option value="3500">3,5 Sekunden</option><option value="5500">5,5 Sekunden</option></select>
+    <label so-label>So geht's</label>
+    <div style="color:var(--dim);font-size:.82rem;line-height:1.5" so-text>
+      Stell das Handy in den Rücken oder in die Tasche. Es pfiff 1-, 2- oder 3-mal — du reagierst <b>nur nach Gehör</b>. Das trainiert Reaktionsgeschwindigkeit ohne hinzusehen. Die Aktionen sprecht ihr vor dem Training ab!
+    </div>
+  </div>
+</main>
+<footer><a href="https://cr1983gh.github.io/">⚓ Deck 7</a> · Ton-Codierung</footer>
+<script>
+(function(){
+  'use strict';
+  var KEY='***';
+  var DEF={a1:'Sprint nach links',a2:'Sprint nach rechts',a3:'1x um die eigene Achse',gap:450,every:2000};
+  var cfg=load(), running=false, audioCtx=null, timerId=null, lastN=0;
+  function load(){ try{ var o=JSON.parse(localStorage.getItem(KEY)); return o?Object.assign({},DEF,o):Object.assign({},DEF); }catch(e){ return Object.assign({},DEF); } }
+  function save(){ try{ localStorage.setItem(KEY,JSON.stringify(cfg)); }catch(e){} }
+  function $(id){ return document.getElementById(id); }
+  function whistle(delay){ try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    var t=audioCtx.currentTime+delay, o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type='square'; o.frequency.setValueAtTime(2100,t); o.frequency.exponentialRampToValueAtTime(1600,t+0.09);
+    g.gain.setValueAtTime(0.001,t); g.gain.exponentialRampToValueAtTime(0.3,t+0.01); g.gain.exponentialRampToValueAtTime(0.001,t+0.1);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+0.14);
+  }catch(e){} }
+  function playRound(){
+    if(!running) return;
+    var n; do { n=1+Math.floor(Math.random()*3); } while(n===lastN && Math.random()<0.7);
+    lastN=n;
+    for(var i=0;i<n;i++) whistle(i*cfg.gap/1000);
+    $('againBtn').style.display='inline-block';
+    $('againBtn').dataset.n=n;
+    timerId=setTimeout(function(){
+      $('msg').textContent='1× · 2× · 3× war es?';
+      $('msg').style.color='var(--dim)';
+    }, n*cfg.gap+400);
+    timerId=setTimeout(function(){ $('againBtn').style.display='none'; }, n*cfg.gap+1800);
+    timerId=setTimeout(playRound, cfg.every);
+  }
+  $('againBtn').addEventListener('click',function(){
+    var n=parseInt(this.dataset.n||'1',10);
+    for(var i=0;i<n;i++) whistle(i*cfg.gap/1000);
+  });
+  function begin(){
+    running=true; $('startBtn').textContent='⏸ Pause';
+    var c=3;
+    function cnt(){ if(!running) return;
+      if(c>0){ $('big').textContent=c; whistle(0); c--; timerId=setTimeout(cnt,800); }
+      else { $('big').textContent='👂'; $('msg').textContent='Ohren auf!'; $('msg').style.color='var(--accent)'; timerId=setTimeout(playRound,700); }
+    } cnt();
+  }
+  function pause(){ running=false; clearTimeout(timerId); $('startBtn').textContent='▶ Weiter'; $('big').textContent='⏸'; $('againBtn').style.display='none'; }
+  $('startBtn').addEventListener('click',function(){ if(!running) begin(); else pause(); });
+  $('settingsBtn').addEventListener('click',function(){ $('panel').classList.toggle('open'); });
+  function bind(id,fn){ $(id).addEventListener('change',function(e){ fn(e.target.value); save(); }); }
+  $('a1').value=cfg.a1; $('a2').value=cfg.a2; $('a3').value=cfg.a3; $('gapSel').value=String(cfg.gap); $('everySel').value=String(cfg.every);
+  bind('a1',function(v){cfg.a1=v||DEF.a1;}); bind('a2',function(v){cfg.a2=v||DEF.a2;}); bind('a3',function(v){cfg.a3=v||DEF.a3;});
+  bind('gapSel',function(v){cfg.gap=parseInt(v,10);}); bind('everySel',function(v){cfg.every=parseInt(v,10);});
+  window.addEventListener('visibilitychange',function(){ if(document.hidden&&running) pause(); });
+})();
+</script>
+</body>
+</html>

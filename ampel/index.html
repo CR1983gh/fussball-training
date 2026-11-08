@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>🚦 Ampel-Dribbling</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #ffd400;
+    --border: #30363d;
+    --green: #1db954;
+    --yellow: #ffd400;
+    --red: #e5484d;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overflow-x: hidden;
+  }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    font-size: 15px;
+    gap: 10px;
+  }
+  header .title { font-weight: 700; letter-spacing: .02em; }
+  header a.back { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  header a.back:hover { color: var(--accent); }
+
+  /* ---- Full-area traffic light ---- */
+  #lightWrap {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 52vh;
+    padding: 16px 10px;
+    background: #1f242c;
+    transition: background .12s linear;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+  }
+  #lightWrap.green  { background: var(--green); }
+  #lightWrap.yellow { background: var(--yellow); }
+  #lightWrap.red    { background: var(--red); }
+
+  #bigWord {
+    font-size: clamp(52px, 17vmin, 160px);
+    font-weight: 900;
+    line-height: 1.02;
+    letter-spacing: .01em;
+    color: #ffffff;
+    text-shadow: 0 3px 14px rgba(0, 0, 0, .45);
+    user-select: none;
+    text-transform: uppercase;
+  }
+  #lightWrap.yellow #bigWord { color: #16130a; text-shadow: none; }
+
+  #subWord {
+    margin-top: 10px;
+    font-size: clamp(18px, 5.5vmin, 40px);
+    font-weight: 800;
+    color: rgba(255, 255, 255, .95);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, .4);
+    user-select: none;
+  }
+  #lightWrap.yellow #subWord { color: #241f0d; text-shadow: none; }
+
+  #drillTimer {
+    margin-top: 8px;
+    font-size: clamp(16px, 4.5vmin, 30px);
+    font-weight: 700;
+    color: rgba(255, 255, 255, .9);
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, .4);
+    min-height: 1.3em;
+    user-select: none;
+  }
+  #lightWrap.yellow #drillTimer { color: #241f0d; text-shadow: none; }
+
+  /* ---- Controls ---- */
+  #controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px 4px;
+  }
+  #startBtn {
+    width: min(92vw, 420px);
+    padding: 18px 20px;
+    font-size: 22px;
+    font-weight: 800;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    background: var(--accent);
+    color: #0d1117;
+    letter-spacing: .02em;
+  }
+  #startBtn:active { transform: scale(.985); }
+  #startBtn.running { background: #21262d; color: var(--text); border: 2px solid var(--border); }
+
+  #settingsToggle {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 15px;
+    cursor: pointer;
+    padding: 6px 10px;
+  }
+  #settingsToggle:hover { color: var(--accent); }
+
+  #settings {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    text-align: left;
+  }
+  #settings.open { display: flex; }
+  #settings label { font-size: 14px; color: var(--text); display: block; margin-bottom: 6px; }
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+  .valOut { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  select {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 15px;
+  }
+  select:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+  .toggleRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .switch { position: relative; display: inline-block; width: 52px; height: 30px; flex: 0 0 auto; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .sliderSw {
+    position: absolute; inset: 0;
+    background: #30363d;
+    border-radius: 30px;
+    transition: background .15s;
+    cursor: pointer;
+  }
+  .sliderSw::before {
+    content: "";
+    position: absolute;
+    width: 24px; height: 24px;
+    left: 3px; top: 3px;
+    background: #e6edf3;
+    border-radius: 50%;
+    transition: transform .15s;
+  }
+  .switch input:checked + .sliderSw { background: var(--accent); }
+  .switch input:checked + .sliderSw::before { transform: translateX(22px); }
+
+  footer {
+    text-align: center;
+    padding: 10px 0 14px;
+    font-size: 11px;
+    color: #484f58;
+  }
+  footer a { color: #484f58; }
+  footer a:hover { color: var(--accent); }
+
+  @media (min-width: 700px) {
+    #startBtn { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="title">🚦 Ampel-Dribbling</span>
+  <a class="back" href="../index.html">← Training</a>
+</header>
+
+<div id="lightWrap">
+  <div id="bigWord">Bereit?</div>
+  <div id="subWord">Start drücken</div>
+  <div id="drillTimer"></div>
+</div>
+
+<div id="controls">
+  <button id="startBtn" type="button">▶ Start</button>
+  <button id="settingsToggle" type="button" aria-expanded="false">⚙ Einstellungen</button>
+
+  <div id="settings">
+    <div>
+      <label for="minSlider">Mindestdauer: <span class="valOut" id="minVal">2 s</span></label>
+      <input type="range" id="minSlider" min="1" max="10" step="0.5" value="2">
+    </div>
+    <div>
+      <label for="maxSlider">Maximaldauer: <span class="valOut" id="maxVal">6 s</span></label>
+      <input type="range" id="maxSlider" min="1" max="10" step="0.5" value="6">
+    </div>
+
+    <div>
+      <label for="drillSelect">Übungs-Timer</label>
+      <select id="drillSelect">
+        <option value="0" selected>Aus</option>
+        <option value="2">2 Minuten</option>
+        <option value="5">5 Minuten</option>
+        <option value="10">10 Minuten</option>
+      </select>
+    </div>
+
+    <div class="toggleRow">
+      <label for="soundToggle" style="margin:0;">Signalton bei Farbwechsel</label>
+      <span class="switch">
+        <input type="checkbox" id="soundToggle" checked>
+        <span class="sliderSw"></span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <a href="https://cr1983gh.github.io/">⚓ Deck 7</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var LS_KEY = "zsConfig-ampel";
+
+  var DEFAULTS = {
+    minSec: 2,
+    maxSec: 6,
+    drillMin: 0,
+    sound: true
+  };
+
+  /* GRUEN / GELB / ROT */
+  var COLORS = ["green", "yellow", "red"];
+  var WORDS = {
+    green:  { big: "DRIBBELN!", sub: "Ball führen, weiträume suchen" },
+    yellow: { big: "Langsam...", sub: "Tempo halbieren, Sohle" },
+    red:    { big: "STOPP!",    sub: "Sohle auf Ball, Kopf hoch" }
+  };
+
+  var cfg = loadCfg();
+
+  var elWrap     = document.getElementById("lightWrap");
+  var elBig      = document.getElementById("bigWord");
+  var elSub      = document.getElementById("subWord");
+  var elTimer    = document.getElementById("drillTimer");
+  var elStart    = document.getElementById("startBtn");
+  var elToggle   = document.getElementById("settingsToggle");
+  var elSettings = document.getElementById("settings");
+  var elMin      = document.getElementById("minSlider");
+  var elMinVal   = document.getElementById("minVal");
+  var elMax      = document.getElementById("maxSlider");
+  var elMaxVal   = document.getElementById("maxVal");
+  var elDrill    = document.getElementById("drillSelect");
+  var elSound    = document.getElementById("soundToggle");
+
+  var running = false;
+  var timerId = null;      // color-change setTimeout (single chain)
+  var drillId = null;      // drill-end setTimeout
+  var drillTickId = null;  // countdown display setTimeout chain
+  var drillEndAt = null;
+  var current = null;      // aktuelle Farbe
+  var audioCtx = null;
+
+  /* ---------- persistence ---------- */
+  function loadCfg() {
+    var c = {};
+    var k;
+    for (k in DEFAULTS) { if (Object.prototype.hasOwnProperty.call(DEFAULTS, k)) c[k] = DEFAULTS[k]; }
+    try {
+      var raw = window.localStorage ? localStorage.getItem(LS_KEY) : null;
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (p && typeof p === "object") {
+          if (typeof p.minSec === "number" && p.minSec >= 1 && p.minSec <= 10) c.minSec = p.minSec;
+          if (typeof p.maxSec === "number" && p.maxSec >= 1 && p.maxSec <= 10) c.maxSec = p.maxSec;
+          if (p.drillMin === 0 || p.drillMin === 2 || p.drillMin === 5 || p.drillMin === 10) c.drillMin = p.drillMin;
+          if (typeof p.sound === "boolean") c.sound = p.sound;
+        }
+      }
+    } catch (e) { /* localStorage nicht verfuegbar oder kaputt -> Defaults */ }
+    if (c.minSec > c.maxSec) { var t = c.minSec; c.minSec = c.maxSec; c.maxSec = t; }
+    return c;
+  }
+
+  function saveCfg() {
+    try {
+      if (window.localStorage) localStorage.setItem(LS_KEY, JSON.stringify(cfg));
+    } catch (e) { /* ignorieren */ }
+  }
+
+  /* ---------- audio: klar unterscheidbare Toene ---------- */
+  function ensureAudio() {
+    try {
+      if (!audioCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    } catch (e) { audioCtx = null; }
+  }
+
+  function beep(freq, durMs, whenOffset, type) {
+    if (!cfg.sound || !audioCtx) return;
+    try {
+      var t0 = audioCtx.currentTime + (whenOffset || 0);
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = type || "square";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.3, t0 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + durMs / 1000);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t0);
+      osc.stop(t0 + durMs / 1000 + 0.02);
+    } catch (e) { /* ignorieren */ }
+  }
+
+  /* gruen = 1 hoher Ton, gelb = 2 mittlere Toene, rot = 1 tiefer langer Ton */
+  function playSignal(color) {
+    if (color === "green")       beep(1000, 140, 0);
+    else if (color === "yellow") { beep(650, 110, 0); beep(650, 110, 0.18); }
+    else if (color === "red")    beep(220, 550, 0, "sawtooth");
+  }
+
+  /* ---------- light logic ---------- */
+  function randomColor() {
+    if (COLORS.length < 2) return COLORS[0];
+    var c, guard = 0;
+    do {
+      c = COLORS[Math.floor(Math.random() * COLORS.length)];
+      guard++;
+    } while (c === current && guard < 50);
+    return c;
+  }
+
+  function randomDuration() {
+    var lo = Math.min(cfg.minSec, cfg.maxSec);
+    var hi = Math.max(cfg.minSec, cfg.maxSec);
+    var span = Math.max(0, hi - lo);
+    return (lo + Math.random() * span) * 1000;
+  }
+
+  function applyColor(color) {
+    current = color;
+    elWrap.classList.remove("green", "yellow", "red");
+    elWrap.classList.add(color);
+    elBig.textContent = WORDS[color].big;
+    elSub.textContent = WORDS[color].sub;
+    playSignal(color);
+  }
+
+  function clearTimer() {
+    if (timerId !== null) { clearTimeout(timerId); timerId = null; }
+    if (drillId !== null) { clearTimeout(drillId); drillId = null; }
+    if (drillTickId !== null) { clearTimeout(drillTickId); drillTickId = null; }
+  }
+
+  /* setTimeout-Kette: naechster Farbwechsel nach zufälliger Dauer */
+  function scheduleNext() {
+    timerId = setTimeout(function () {
+      if (!running) return;
+      applyColor(randomColor());
+      scheduleNext();
+    }, randomDuration());
+  }
+
+  function fmtClock(ms) {
+    var s = Math.max(0, Math.ceil(ms / 1000));
+    var m = Math.floor(s / 60);
+    var r = s % 60;
+    return m + ":" + (r < 10 ? "0" : "") + r;
+  }
+
+  function drillTick() {
+    if (!running) return;
+    var rest = drillEndAt - Date.now();
+    if (rest <= 0) {
+      elTimer.textContent = "";
+      return; // drillFinished wurde per drillId ausgeloest
+    }
+    elTimer.textContent = "⏱ " + fmtClock(rest);
+    drillTickId = setTimeout(drillTick, 500);
+  }
+
+  function scheduleDrill() {
+    if (cfg.drillMin > 0) {
+      drillEndAt = Date.now() + cfg.drillMin * 60 * 1000;
+      drillId = setTimeout(drillFinished, cfg.drillMin * 60 * 1000);
+      drillTick();
+    } else {
+      drillEndAt = null;
+      elTimer.textContent = "";
+    }
+  }
+
+  function drillFinished() {
+    drillId = null;
+    pause();
+    elBig.textContent = "✅ Fertig!";
+    elSub.textContent = "Gute Einheit!";
+    beep(900, 120, 0);
+    beep(1100, 120, 0.16);
+    beep(1400, 220, 0.32);
+  }
+
+  function start() {
+    ensureAudio();
+    running = true;
+    elStart.textContent = "⏸ Stopp";
+    elStart.classList.add("running");
+    applyColor(randomColor());   // ohne Countdown: sofort los
+    scheduleNext();
+    scheduleDrill();
+  }
+
+  function pause() {
+    running = false;
+    clearTimer();
+    elStart.textContent = "▶ Start";
+    elStart.classList.remove("running");
+    elTimer.textContent = "";
+  }
+
+  /* ---------- UI events ---------- */
+  elStart.addEventListener("click", function () {
+    ensureAudio();
+    if (running) pause(); else start();
+  });
+
+  /* Auch auf die Fläche tippen = Start/Stopp (gut am Hallen-Tablet) */
+  elWrap.addEventListener("click", function () {
+    ensureAudio();
+    if (running) pause(); else start();
+  });
+
+  elToggle.addEventListener("click", function (ev) {
+    ev.stopPropagation();
+    var open = elSettings.classList.toggle("open");
+    elToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+  function fmtSec(v) { return v.toFixed(1).replace(".", ",") + " s"; }
+
+  function renderRange() {
+    elMin.value = String(cfg.minSec);
+    elMax.value = String(cfg.maxSec);
+    elMinVal.textContent = fmtSec(cfg.minSec);
+    elMaxVal.textContent = fmtSec(cfg.maxSec);
+  }
+
+  elMin.addEventListener("input", function () {
+    cfg.minSec = parseFloat(elMin.value);
+    if (cfg.minSec > cfg.maxSec) { cfg.maxSec = cfg.minSec; } // Min <= Max halten
+    renderRange();
+    saveCfg();
+  });
+
+  elMax.addEventListener("input", function () {
+    cfg.maxSec = parseFloat(elMax.value);
+    if (cfg.maxSec < cfg.minSec) { cfg.minSec = cfg.maxSec; } // Min <= Max halten
+    renderRange();
+    saveCfg();
+  });
+
+  elDrill.addEventListener("change", function () {
+    var v = parseInt(elDrill.value, 10);
+    cfg.drillMin = (v === 2 || v === 5 || v === 10) ? v : 0;
+    saveCfg();
+    // neu justierter Timer greift beim naechsten Start
+  });
+
+  elSound.addEventListener("change", function () {
+    cfg.sound = elSound.checked;
+    if (cfg.sound) ensureAudio();
+    saveCfg();
+  });
+
+  /* ---------- background tab handling ---------- */
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden && running) {
+      pause(); // nicht unbeobachtet weitertackern
+    }
+  });
+
+  /* ---------- init ---------- */
+  function init() {
+    renderRange();
+    elDrill.value = String(cfg.drillMin);
+    elSound.checked = !!cfg.sound;
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

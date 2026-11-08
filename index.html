@@ -16,19 +16,19 @@
   header{background:var(--schwarz);color:#fff;padding:2.2rem 1rem 1.6rem;text-align:center;position:relative}
   header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(90deg,var(--gelb) 0 50%,#fff 50% 100%)}
   header h1{margin:0;font-size:1.5rem}
-  header p{color:#cfcfcf;margin:.3rem 0 0;font-size:.88rem}
+  header p{color:#cfcfcf;margin:.3rem 0 0;font-size:.9rem}
   main{max-width:760px;margin:0 auto;padding:1rem}
   .lbl{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--grau);margin:1.4rem 0 .4rem}
   .cards{display:flex;flex-direction:column;gap:.7rem}
   .pcard{display:flex;align-items:center;gap:.9rem;background:var(--card);border-radius:var(--r-card);box-shadow:var(--shadow);padding:.9rem 1rem;text-decoration:none;color:var(--fg);transition:transform .12s}
   .pcard:hover{transform:translateY(-2px);background:var(--hover)}
-  .pico{flex:none;width:44px;height:44px;border-radius:50%;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+  .pico{flex:none;width:46px;height:46px;border-radius:50%;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:1.35rem}
   .pinfo{min-width:0}
-  .pinfo b{display:block;font-size:1rem}
-  .pinfo span{display:block;font-size:.8rem;color:var(--grau);margin-top:.1rem}
+  .pinfo b{display:block;font-size:1.02rem}
+  .pinfo span{display:block;font-size:.82rem;color:var(--grau);margin-top:.15rem;line-height:1.35}
   .chev{margin-left:auto;color:var(--grau);flex:none}
-  .soon{opacity:.55}
-  .soon .badge{margin-left:auto;flex:none;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--grau);border:1px solid var(--line2);border-radius:999px;padding:.2rem .55rem}
+  .wie{background:var(--card);border-radius:var(--r-card);box-shadow:var(--shadow);padding:1rem;font-size:.88rem;line-height:1.55;color:var(--fg)}
+  .wie b{color:var(--akz)}
   footer{text-align:center;color:var(--grau);font-size:.72rem;margin:2.5rem 0 1.2rem}
   footer a{color:var(--grau)}
 </style>
@@ -36,21 +36,73 @@
 <body>
 <header>
   <h1>⚽ Fußball-Training</h1>
-  <p>Übungen, Tools &amp; Drill-Helfer</p>
+  <p>Kopf und Füße zusammen trainieren — mehr sehen, schneller entscheiden!</p>
 </header>
 <main>
-  <div class="lbl">Module</div>
+  <div class="lbl">👀 Reagieren &amp; Sehen</div>
   <div class="cards">
     <a class="pcard" href="zahlen/">
       <div class="pico">🔢</div>
-      <div class="pinfo"><b>Zahlen-Scanner</b><span>Zahlen 1–100 im Sekundentakt — Umdrehen, erfassen, reagieren. Trainiert das Scannen vor der Ballannahme.</span></div>
+      <div class="pinfo"><b>Zahlen-Scanner</b><span>Zahl aufblitzen, umdrehen, reagieren: gerade oder ungerade. Wie der Blick über die Schulter vor dem Pass.</span></div>
       <div class="chev">→</div>
     </a>
-    <div class="pcard soon">
+    <a class="pcard" href="blitz/">
+      <div class="pico">🌈</div>
+      <div class="pinfo"><b>Farb-Blitz</b><span>Farbe sehen, Aktion machen. Mit Fang-Modus: Das Wort sagt eine Farbe, die Buchstaben eine andere — trau deinen Augen!</span></div>
+      <div class="chev">→</div>
+    </a>
+    <a class="pcard" href="pfeile/">
+      <div class="pico">🧭</div>
+      <div class="pinfo"><b>Pfeil-Reaktion</b><span>Pfeil zeigt die Richtung, Zahl sagt wie oft. Sprint, Pass, Sprung — los!</span></div>
+      <div class="chev">→</div>
+    </a>
+    <a class="pcard" href="ampel/">
+      <div class="pico">🚦</div>
+      <div class="pinfo"><b>Ampel-Dribbling</b><span>Grün = dribbeln, Gelb = langsam, Rot = Stopp! Die App ist dein Schiedsrichter.</span></div>
+      <div class="chev">→</div>
+    </a>
+    <a class="pcard" href="blitzblick/">
+      <div class="pico">👀</div>
+      <div class="pinfo"><b>Blitz-Blick</b><span>Blitzschnell erscheint etwas in einer Ecke. Nur mit den Augenwinkeln erfassen — Profis schauen nicht hin, sie SCANNEN!</span></div>
+      <div class="chev">→</div>
+    </a>
+  </div>
+
+  <div class="lbl">🧠 Merken &amp; Reagieren nach Gehör</div>
+  <div class="cards">
+    <a class="pcard" href="merken/">
       <div class="pico">🧠</div>
-      <div class="pinfo"><b>Weitere Module</b><span>Farb-Reaktion, Pass-Folgen, Koordination — nach und nach.</span></div>
-      <span class="badge">in Arbeit</span>
-    </div>
+      <div class="pinfo"><b>Merksport</b><span>Merke dir die Zeichen-Kette und führe sie in der richtigen Reihenfolge aus. 2, 3 oder 4 Zeichen — wie schwierig willst du es?</span></div>
+      <div class="chev">→</div>
+    </a>
+    <a class="pcard" href="toene/">
+      <div class="pico">🔊</div>
+      <div class="pinfo"><b>Ton-Codierung</b><span>Das Handy ist im Rücken und pfiff 1-, 2- oder 3-mal — welche Aktion war das? Nur nach Gehör!</span></div>
+      <div class="chev">→</div>
+    </a>
+  </div>
+
+  <div class="lbl">🎯 Fürs ganze Training</div>
+  <div class="cards">
+    <a class="pcard" href="wuerfel/">
+      <div class="pico">🎲</div>
+      <div class="pinfo"><b>Drill-Würfel</b><span>Keine Idee was du trainieren sollst? Würfel dir eine Übung — mit Timer für jede Station.</span></div>
+      <div class="chev">→</div>
+    </a>
+    <a class="pcard" href="../fussball-timer/">
+      <div class="pico">⏱️</div>
+      <div class="pinfo"><b>Spiel-Timer</b><span>Echte Spieluhr mit Halbzeiten, Nachspielzeit und Tore-Log — für dein eigenes Match.</span></div>
+      <div class="chev">→</div>
+    </a>
+  </div>
+
+  <div class="lbl">💡 So trainierst du richtig</div>
+  <div class="wie">
+    1. <b>Rücken zum Bildschirm</b> stellen, auf das Signal (Ton!) warten, schnell umdrehen.<br>
+    2. Die Aktion ist <b>vorher abgesprochen</b> — z. B. ungerade = Sprint nach links.<br>
+    3. <b>Nur kurz hinschauen</b> (unter 1,5 Sekunden) — so wie im Spiel, bevor der Ball kommt.<br>
+    4. Steigere die <b>Entfernung</b>: erst 3 Meter, später 8–12 Meter.<br>
+    5. 2× pro Woche für 10–15 Minuten reicht schon — <b>regelmäßig schlägt viel</b>!
   </div>
 </main>
 <footer><a href="https://cr1983gh.github.io/">⚓ Deck 7</a> · Trainingsbereich</footer>
