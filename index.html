@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>⚽ Fußball-Training</title>
+<style>
+  :root{
+    --bg:#eef4fb; --card:#fff; --fg:#24384d; --grau:#6b7f95; --akz:#2f6fb3;
+    --schwarz:#16283a; --gelb:#ffd400; --line:#dbe6f2; --line2:#c4d6ea; --hover:#e7f0fa;
+    --r-card:14px; --shadow:0 1px 5px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh}
+  header{background:var(--schwarz);color:#fff;padding:2.2rem 1rem 1.6rem;text-align:center;position:relative}
+  header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(90deg,var(--gelb) 0 50%,#fff 50% 100%)}
+  header h1{margin:0;font-size:1.5rem}
+  header p{color:#cfcfcf;margin:.3rem 0 0;font-size:.88rem}
+  main{max-width:760px;margin:0 auto;padding:1rem}
+  .lbl{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--grau);margin:1.4rem 0 .4rem}
+  .cards{display:flex;flex-direction:column;gap:.7rem}
+  .pcard{display:flex;align-items:center;gap:.9rem;background:var(--card);border-radius:var(--r-card);box-shadow:var(--shadow);padding:.9rem 1rem;text-decoration:none;color:var(--fg);transition:transform .12s}
+  .pcard:hover{transform:translateY(-2px);background:var(--hover)}
+  .pico{flex:none;width:44px;height:44px;border-radius:50%;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+  .pinfo{min-width:0}
+  .pinfo b{display:block;font-size:1rem}
+  .pinfo span{display:block;font-size:.8rem;color:var(--grau);margin-top:.1rem}
+  .chev{margin-left:auto;color:var(--grau);flex:none}
+  .soon{opacity:.55}
+  .soon .badge{margin-left:auto;flex:none;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--grau);border:1px solid var(--line2);border-radius:999px;padding:.2rem .55rem}
+  footer{text-align:center;color:var(--grau);font-size:.72rem;margin:2.5rem 0 1.2rem}
+  footer a{color:var(--grau)}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚽ Fußball-Training</h1>
+  <p>Übungen, Tools &amp; Drill-Helfer</p>
+</header>
+<main>
+  <div class="lbl">Module</div>
+  <div class="cards">
+    <a class="pcard" href="zahlen/">
+      <div class="pico">🔢</div>
+      <div class="pinfo"><b>Zahlen-Scanner</b><span>Zahlen 1–100 im Sekundentakt — Umdrehen, erfassen, reagieren. Trainiert das Scannen vor der Ballannahme.</span></div>
+      <div class="chev">→</div>
+    </a>
+    <div class="pcard soon">
+      <div class="pico">🧠</div>
+      <div class="pinfo"><b>Weitere Module</b><span>Farb-Reaktion, Pass-Folgen, Koordination — nach und nach.</span></div>
+      <span class="badge">in Arbeit</span>
+    </div>
+  </div>
+</main>
+<footer><a href="https://cr1983gh.github.io/">⚓ Deck 7</a> · Trainingsbereich</footer>
+</body>
+</html>

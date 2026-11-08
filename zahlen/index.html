@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>⚽ Zahlen-Scanner</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #ffd400;
+    --border: #30363d;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overflow-x: hidden;
+  }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    font-size: 15px;
+    gap: 10px;
+  }
+  header .title { font-weight: 700; letter-spacing: .02em; }
+  header a.back { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  header a.back:hover { color: var(--accent); }
+
+  /* ---- Number display ---- */
+  #displayWrap {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    min-height: 45vh;
+  }
+  #numberBox {
+    width: min(92vw, 70vh, 620px);
+    aspect-ratio: 1 / 1;
+    border: 2px solid #6e7681;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    position: relative;
+  }
+  #number {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 40vmin;
+    line-height: 1;
+    font-weight: 700;
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    user-select: none;
+  }
+  #hint {
+    margin-top: 14px;
+    font-size: clamp(14px, 4vw, 20px);
+    color: var(--muted);
+    text-align: center;
+    min-height: 1.4em;
+    user-select: none;
+  }
+
+  /* ---- Controls ---- */
+  #controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 14px 4px;
+  }
+  #startBtn {
+    width: min(92vw, 420px);
+    padding: 18px 20px;
+    font-size: 22px;
+    font-weight: 800;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    background: var(--accent);
+    color: #0d1117;
+    letter-spacing: .02em;
+  }
+  #startBtn:active { transform: scale(.985); }
+  #startBtn.running { background: #21262d; color: var(--text); border: 2px solid var(--border); }
+
+  #settingsToggle {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 15px;
+    cursor: pointer;
+    padding: 6px 10px;
+  }
+  #settingsToggle:hover { color: var(--accent); }
+
+  #settings {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    text-align: left;
+  }
+  #settings.open { display: flex; }
+  #settings label { font-size: 14px; color: var(--text); display: block; margin-bottom: 6px; }
+  #settings .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  input[type="range"] {
+    flex: 1 1 160px;
+    accent-color: var(--accent);
+    min-width: 140px;
+  }
+  #intervalVal { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; min-width: 3.2em; }
+  select, input[type="text"] {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 15px;
+  }
+  select:focus, input[type="text"]:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+  .toggleRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .switch { position: relative; display: inline-block; width: 52px; height: 30px; flex: 0 0 auto; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .sliderSw {
+    position: absolute; inset: 0;
+    background: #30363d;
+    border-radius: 30px;
+    transition: background .15s;
+    cursor: pointer;
+  }
+  .sliderSw::before {
+    content: "";
+    position: absolute;
+    width: 24px; height: 24px;
+    left: 3px; top: 3px;
+    background: #e6edf3;
+    border-radius: 50%;
+    transition: transform .15s;
+  }
+  .switch input:checked + .sliderSw { background: var(--accent); }
+  .switch input:checked + .sliderSw::before { transform: translateX(22px); }
+
+  /* ---- Training hint ---- */
+  #drillHint {
+    margin: 14px 14px 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--muted);
+    position: relative;
+  }
+  #drillHint strong { color: var(--text); }
+  #drillClose {
+    position: absolute;
+    top: 6px; right: 8px;
+    background: none; border: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+  }
+  #drillClose:hover { color: var(--accent); }
+  #drillHint.hidden { display: none; }
+
+  footer {
+    text-align: center;
+    padding: 10px 0 14px;
+    font-size: 11px;
+    color: #484f58;
+  }
+  footer a { color: #484f58; }
+  footer a:hover { color: var(--accent); }
+
+  @media (min-width: 700px) {
+    #number { font-size: 38vmin; }
+    #startBtn { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="title">⚽ Zahlen-Scanner</span>
+  <a class="back" href="../index.html">← Training</a>
+</header>
+
+<div id="displayWrap">
+  <div id="numberBox"><span id="number">–</span></div>
+  <div id="hint"></div>
+</div>
+
+<div id="controls">
+  <button id="startBtn" type="button">▶ Start</button>
+  <button id="settingsToggle" type="button" aria-expanded="false">⚙ Einstellungen</button>
+
+  <div id="settings">
+    <div>
+      <label for="intervalSlider">Intervall: <span id="intervalVal">1.0 s</span></label>
+      <input type="range" id="intervalSlider" min="0.5" max="3.0" step="0.1" value="1.0">
+    </div>
+
+    <div>
+      <label for="modeSelect">Modus</label>
+      <select id="modeSelect">
+        <option value="gerade" selected>Gerade / Ungerade</option>
+        <option value="grenze50">Kleiner / Größer 50</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="hintA">Merkhilfe – Bedingung A</label>
+      <input type="text" id="hintA" maxlength="60">
+    </div>
+    <div>
+      <label for="hintB">Merkhilfe – Bedingung B</label>
+      <input type="text" id="hintB" maxlength="60">
+    </div>
+
+    <div class="toggleRow">
+      <label for="soundToggle" style="margin:0;">Signalton bei jedem Wechsel</label>
+      <span class="switch">
+        <input type="checkbox" id="soundToggle" checked>
+        <span class="sliderSw"></span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div id="drillHint">
+  <button id="drillClose" type="button" title="Hinweis ausblenden" aria-label="Hinweis ausblenden">×</button>
+  <strong>Drill-Aufbau:</strong> Spieler steht mit dem Rücken zum Bildschirm. Auf Pfiff oder
+  Klicksignal umdrehen, die Zahl aus einem Blick erfassen (<strong>&lt;1,5&nbsp;s</strong>) und die
+  vereinbarte Aktion ausführen – z.&nbsp;B. Sprint links/rechts oder Passtoyp je nach Modus.
+  Distanz steigern: zuerst 3&nbsp;m, später 8–12&nbsp;m.
+</div>
+
+<footer>
+  <a href="https://cr1983gh.github.io/">⚓ Deck 7</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var LS_KEY = "zsConfig";
+
+  var DEFAULTS = {
+    interval: 1.0,
+    mode: "gerade",
+    hintA: "gerade = links",
+    hintB: "ungerade = rechts",
+    sound: true,
+    drillHidden: false
+  };
+
+  var HINT_DEFAULTS = {
+    gerade: ["gerade = links", "ungerade = rechts"],
+    grenze50: ["kleiner 50 = links", "größer 50 = rechts"]
+  };
+
+  var cfg = loadCfg();
+
+  var elNumber   = document.getElementById("number");
+  var elHint     = document.getElementById("hint");
+  var elStart    = document.getElementById("startBtn");
+  var elToggle   = document.getElementById("settingsToggle");
+  var elSettings = document.getElementById("settings");
+  var elSlider   = document.getElementById("intervalSlider");
+  var elIntVal   = document.getElementById("intervalVal");
+  var elMode     = document.getElementById("modeSelect");
+  var elHintA    = document.getElementById("hintA");
+  var elHintB    = document.getElementById("hintB");
+  var elSound    = document.getElementById("soundToggle");
+  var elDrill    = document.getElementById("drillHint");
+  var elDrillX   = document.getElementById("drillClose");
+
+  var running = false;      // numbers cycling
+  var counting = false;     // 3-2-1 countdown active
+  var timerId = null;       // setTimeout handle (single chain)
+  var lastNumber = null;
+  var audioCtx = null;
+
+  /* ---------- persistence ---------- */
+  function loadCfg() {
+    var c = {};
+    var k;
+    for (k in DEFAULTS) { if (Object.prototype.hasOwnProperty.call(DEFAULTS, k)) c[k] = DEFAULTS[k]; }
+    try {
+      var raw = window.localStorage ? localStorage.getItem(LS_KEY) : null;
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (p && typeof p === "object") {
+          if (typeof p.interval === "number" && p.interval >= 0.5 && p.interval <= 3.0) c.interval = p.interval;
+          if (p.mode === "gerade" || p.mode === "grenze50") c.mode = p.mode;
+          if (typeof p.hintA === "string") c.hintA = p.hintA;
+          if (typeof p.hintB === "string") c.hintB = p.hintB;
+          if (typeof p.sound === "boolean") c.sound = p.sound;
+          if (typeof p.drillHidden === "boolean") c.drillHidden = p.drillHidden;
+        }
+      }
+    } catch (e) { /* localStorage nicht verfuegbar oder kaputt -> Defaults */ }
+    return c;
+  }
+
+  function saveCfg() {
+    try {
+      if (window.localStorage) localStorage.setItem(LS_KEY, JSON.stringify(cfg));
+    } catch (e) { /* ignorieren */ }
+  }
+
+  /* ---------- audio ---------- */
+  function ensureAudio() {
+    try {
+      if (!audioCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    } catch (e) { audioCtx = null; }
+  }
+
+  function beep(freq, durMs, whenOffset) {
+    if (!cfg.sound || !audioCtx) return;
+    try {
+      var t0 = audioCtx.currentTime + (whenOffset || 0);
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = "square";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.25, t0 + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + durMs / 1000);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t0);
+      osc.stop(t0 + durMs / 1000 + 0.02);
+    } catch (e) { /* ignorieren */ }
+  }
+
+  /* ---------- numbers ---------- */
+  function randomNumber() {
+    var n;
+    var guard = 0;
+    do {
+      n = 1 + Math.floor(Math.random() * 100); // 1..100
+      if (cfg.mode === "grenze50" && n === 50) n = 49; // 50 nie anzeigen
+      guard++;
+    } while (n === lastNumber && guard < 50);
+    lastNumber = n;
+    return n;
+  }
+
+  function showNumber(n) {
+    elNumber.textContent = String(n);
+  }
+
+  function renderHint() {
+    elHint.textContent = cfg.hintA + " | " + cfg.hintB;
+  }
+
+  /* ---------- timer chain (setTimeout only) ---------- */
+  function clearTimer() {
+    if (timerId !== null) { clearTimeout(timerId); timerId = null; }
+  }
+
+  function tick() {
+    showNumber(randomNumber());
+    beep(1200, 50, 0);
+    timerId = setTimeout(tick, cfg.interval * 1000);
+  }
+
+  function startCountdown() {
+    counting = true;
+    running = false;
+    clearTimer();
+    lastNumber = null;
+    elStart.textContent = "⏸ Pause";
+    elStart.classList.add("running");
+
+    var steps = ["3", "2", "1"];
+    var i = 0;
+
+    function countStep() {
+      if (!counting) return; // abgebrochen
+      if (i < steps.length) {
+        showNumber(steps[i]);
+        beep(400, 150, 0); // tief
+        i++;
+        timerId = setTimeout(countStep, 1000);
+      } else {
+        counting = false;
+        showNumber("LOS");
+        beep(1400, 90, 0);   // doppelt hoch
+        beep(1400, 90, 0.12);
+        running = true;
+        timerId = setTimeout(tick, cfg.interval * 1000);
+      }
+    }
+    countStep();
+  }
+
+  function pause() {
+    counting = false;
+    running = false;
+    clearTimer();
+    elStart.textContent = "▶ Start";
+    elStart.classList.remove("running");
+    // aktuelle Zahl bleibt stehen
+  }
+
+  function start() {
+    ensureAudio();
+    startCountdown();
+  }
+
+  /* ---------- UI events ---------- */
+  elStart.addEventListener("click", function () {
+    ensureAudio();
+    if (running || counting) pause(); else start();
+  });
+
+  elToggle.addEventListener("click", function () {
+    var open = elSettings.classList.toggle("open");
+    elToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+  function fmtSec(v) { return v.toFixed(1).replace(".", ",") + " s"; }
+
+  elSlider.addEventListener("input", function () {
+    cfg.interval = Math.round(parseFloat(elSlider.value) * 10) / 10;
+    elIntVal.textContent = fmtSec(cfg.interval);
+    saveCfg();
+    // laufender Wechsel uebernimmt beim naechsten Tick automatisch
+  });
+
+  elMode.addEventListener("change", function () {
+    cfg.mode = elMode.value === "grenze50" ? "grenze50" : "gerade";
+    // Merkhilfe auf Modus-Defaults setzen, wenn noch unveraendert? -> immer sinnvoll auffrischen,
+    // wenn aktueller Text einem anderen Modus-Default entspricht oder leer ist.
+    var d = HINT_DEFAULTS[cfg.mode];
+    var other = cfg.mode === "gerade" ? HINT_DEFAULTS.grenze50 : HINT_DEFAULTS.gerade;
+    var a = cfg.hintA.trim(), b = cfg.hintB.trim();
+    if (!a || !b || a === other[0] || b === other[1] || a === d[0] || b === d[1]) {
+      cfg.hintA = d[0];
+      cfg.hintB = d[1];
+      elHintA.value = cfg.hintA;
+      elHintB.value = cfg.hintB;
+    }
+    lastNumber = null; // Wiederholungspruefung zuruecksetzen (Moduswechsel)
+    renderHint();
+    saveCfg();
+  });
+
+  elHintA.addEventListener("input", function () { cfg.hintA = elHintA.value; renderHint(); saveCfg(); });
+  elHintB.addEventListener("input", function () { cfg.hintB = elHintB.value; renderHint(); saveCfg(); });
+
+  elSound.addEventListener("change", function () {
+    cfg.sound = elSound.checked;
+    if (cfg.sound) ensureAudio();
+    saveCfg();
+  });
+
+  elDrillX.addEventListener("click", function () {
+    cfg.drillHidden = true;
+    elDrill.classList.add("hidden");
+    saveCfg();
+  });
+
+  /* ---------- background tab handling ---------- */
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden && (running || counting)) {
+      pause(); // sauber in den Pausen-Zustand, nicht mitten im Intervall weitertackern
+    }
+  });
+
+  /* ---------- init ---------- */
+  function init() {
+    elSlider.value = String(cfg.interval);
+    elIntVal.textContent = fmtSec(cfg.interval);
+    elMode.value = cfg.mode;
+    elHintA.value = cfg.hintA;
+    elHintB.value = cfg.hintB;
+    elSound.checked = !!cfg.sound;
+    if (cfg.drillHidden) elDrill.classList.add("hidden");
+    renderHint();
+    showNumber(randomNumber()); // Startzahl statisch sichtbar
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
