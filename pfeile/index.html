@@ -212,7 +212,7 @@
 
 <div id="displayWrap">
   <div id="arrowBox">
-    <span id="arrow">➡</span>
+    <span id="arrow">→</span>
     <span id="count"></span>
   </div>
   <div id="hint">Pfeil = deine Richtung! Zahl = wie oft?</div>
@@ -275,8 +275,8 @@
     sound: true
   };
 
-  var DIR4 = ["➡", "⬅", "⬆", "⬇"];
-  var DIR8 = ["➡", "⬅", "⬆", "⬇", "↗", "↘", "↖", "↙"];
+  var DIR4 = ["→", "←", "↑", "↓"];
+  var DIR8 = ["→", "←", "↑", "↓", "↗", "↘", "↖", "↙"];
 
   var cfg = loadCfg();
 
@@ -381,7 +381,7 @@
   }
 
   function renderStatic() {
-    elArrow.textContent = cfg.mode === "dir8" ? "↖" : "➡";
+    elArrow.textContent = cfg.mode === "dir8" ? "↖" : "→";
     if (cfg.mode === "dir4count") {
       elCount.textContent = "2";
       elCount.classList.add("visible");
